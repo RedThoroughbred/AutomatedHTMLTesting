@@ -1,0 +1,23 @@
+{
+    "webdriver_options": [
+      "--disable-popup-blocking",
+      "--start-maximized"
+    ],
+    "platforms": [
+      {
+        "name": "secure-site",
+        "url": "https://cpprohome01prod.car-part.com",
+        "requires_login": true,
+        "username": "icdev_webtesting_prod@car-part.com",
+        "password": "carpartpro!",
+        "login_selectors": {
+          "username_field": "#input > table > tbody > tr:nth-child(1) > td:nth-child(2) > input[type=text]",
+          "password_field": "#pwdrow > td:nth-child(2) > input[type=password]",
+          "login_button": "input[type='submit']"
+        },
+        "selectors": {
+          "search_button": "input[type='submit'][value='Search']"
+        }
+      }
+    ]
+  }

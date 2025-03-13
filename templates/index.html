@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Automated HTML Testing - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                Run a New Test
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('run_test') }}" method="post" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="platform_type" class="form-label">Platform Type</label>
+                                <select class="form-select" id="platform_type" name="platform_type">
+                                    {% for config in configs %}
+                                    <option value="{{ config.type }}">{{ config.name }} ({{ config.type }})</option>
+                                    {% endfor %}
+                                    <option value="custom">Custom Website Testing</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="url" class="form-label">Website URL (optional - overrides config)</label>
+                                <input type="url" class="form-control" id="url" name="url" placeholder="https://example.com">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username (optional)</label>
+                                <input type="text" class="form-control" id="username" name="username">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password (optional)</label>
+                                <input type="password" class="form-control" id="password" name="password">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="test_file" class="form-label">Test Cases File</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="test_file" name="test_file">
+                                        {% for file in test_files %}
+                                        <option value="{{ file.path }}">{{ file.name }} ({{ file.case_count }} tests)</option>
+                                        {% endfor %}
+                                    </select>
+                                    <a class="btn btn-outline-secondary" id="view_test_file" href="#" onclick="viewSelectedTestFile()">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <script>
+                                function viewSelectedTestFile() {
+                                    const testFile = document.getElementById('test_file').value;
+                                    window.location.href = '/view_test_file/' + encodeURIComponent(testFile);
+                                }
+                            </script>
+                            
+                            <div class="mb-3">
+                                <label for="test_file_upload" class="form-label">Or Upload New Test File</label>
+                                <input class="form-control" type="file" id="test_file_upload" name="test_file_upload">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="wait_time" class="form-label">Wait Time (seconds)</label>
+                                <input type="number" class="form-control" id="wait_time" name="wait_time" value="2.0" step="0.5" min="0.5" max="10">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="headless" name="headless">
+                                    <label class="form-check-label" for="headless">
+                                        Run in Headless Mode
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="save_screenshots" name="save_screenshots" checked>
+                                    <label class="form-check-label" for="save_screenshots">
+                                        Save All Screenshots
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Run Test</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Test Results</span>
+                {% if total_results > 5 %}
+                <a href="{{ url_for('all_results') }}" class="btn btn-sm btn-outline-primary">
+                    View All ({{ total_results }})
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if results_files %}
+                <ul class="list-group">
+                    {% for file in results_files %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('view_results', results_file=file) }}">{{ file }}</a>
+                        <div>
+                            <a href="{{ url_for('download_results', results_file=file) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No test results found.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                Configuration Files
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for config in configs %}
+                    <li class="list-group-item">
+                        <a href="{{ url_for('view_config', config_file=config.file) }}">
+                            {{ config.name }} ({{ config.type }})
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                Tools
+            </div>
+            <div class="card-body">
+                <div class="d-grid">
+                    <a href="{{ url_for('create_test_file') }}" class="btn btn-outline-primary mb-2">
+                        <i class="bi bi-file-earmark-plus"></i> Create New Test File
+                    </a>
+                    <a href="{{ url_for('create_test_from_table') }}" class="btn btn-outline-primary mb-2">
+                        <i class="bi bi-table"></i> Create Tests from Jira/Confluence
+                    </a>
+                    <a href="{{ url_for('schedule_test') }}" class="btn btn-outline-primary mb-2">
+                        <i class="bi bi-calendar"></i> Schedule Tests
+                    </a>
+                    <a href="{{ url_for('create_config') }}" class="btn btn-outline-primary mb-2">
+                        <i class="bi bi-gear"></i> Create New Config
+                    </a>
+                    <a href="{{ url_for('view_screenshots') }}" class="btn btn-outline-secondary mb-2">
+                        <i class="bi bi-images"></i> Screenshot Gallery
+                    </a>
+                    <a href="{{ url_for('view_scheduled_tests') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-list-check"></i> View Scheduled Tests
+                    </a>
+                </div>
+                
+                <div class="accordion mt-3" id="toolsHelp">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTools" aria-expanded="false" aria-controls="collapseTools">
+                                Test Creation Methods Explained
+                            </button>
+                        </h2>
+                        <div id="collapseTools" class="accordion-collapse collapse" data-bs-parent="#toolsHelp">
+                            <div class="accordion-body">
+                                <p><strong>Create New Test File vs Create Tests from Jira/Confluence:</strong></p>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Feature</th>
+                                                <th>Create New Test File</th>
+                                                <th>Create Tests from Jira/Confluence</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Purpose</td>
+                                                <td>Create a blank or sample test file from scratch</td>
+                                                <td>Import test cases from copied Jira/Confluence table data</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Input format</td>
+                                                <td>Manual setup with empty template</td>
+                                                <td>Paste tabular data from Jira/Confluence</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Best for</td>
+                                                <td>Creating tests manually or starting a new test set</td>
+                                                <td>Importing existing test cases from documentation</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Output</td>
+                                                <td>Empty or sample CSV file with proper headers</td>
+                                                <td>CSV file with test cases parsed from table data</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

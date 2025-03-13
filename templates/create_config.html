@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Configuration{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Create New Configuration</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>New Configuration</h5>
+        </div>
+        <div class="card-body">
+            <p>Configuration files control how the test automation interacts with different platforms. These files specify selectors for UI elements, login information, and other platform-specific details.</p>
+            
+            <p>The filename will be generated as <code>config4[platform_type].json</code></p>
+            
+            <form method="POST" action="{{ url_for('create_config') }}">
+                <div class="mb-3">
+                    <label for="platform_type" class="form-label">Platform Type (used in filename)</label>
+                    <input type="text" class="form-control" id="platform_type" name="platform_type" required placeholder="e.g., custom, staging, etc">
+                    <div class="form-text">This will be used in the filename: config4[platform_type].json</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="config_name" class="form-label">Platform Name (displayed in UI)</label>
+                    <input type="text" class="form-control" id="config_name" name="config_name" required placeholder="e.g., Staging Environment">
+                    <div class="form-text">This will be shown in the dropdown menu for platform selection</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Create Configuration</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>How Configuration Files Work</h5>
+        </div>
+        <div class="card-body">
+            <p>Configuration files are used to define how the test automation interacts with different platforms. Each configuration file includes:</p>
+            
+            <ul>
+                <li><strong>WebDriver Options:</strong> Browser window settings and other WebDriver options</li>
+                <li><strong>Platform Information:</strong> Name, type, and base URL for the platform</li>
+                <li><strong>Login Details:</strong> Whether login is required and corresponding fields</li>
+                <li><strong>Selectors:</strong> CSS or XPath selectors for important UI elements (year dropdown, model field, etc.)</li>
+            </ul>
+            
+            <p>After creating a configuration, you'll need to edit it to add specific selectors for the website you're testing.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

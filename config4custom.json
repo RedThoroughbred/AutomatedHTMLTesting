@@ -1,0 +1,15 @@
+{
+  "webdriver_options": [
+    "--window-size=1200,800"
+  ],
+  "platforms": [
+    {
+      "name": "custom_site",
+      "type": "web",
+      "url": "https://your-public-site-url.com/",
+      "login": {
+        "required": false
+      }
+    }
+  ]
+}

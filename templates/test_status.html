@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Test Status - {{ run_id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Test Run: {{ run_id }}</span>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{{ url_for('export_log', run_id=run_id) }}" class="btn btn-sm btn-outline-secondary">Export Log</a>
+                    <button id="refresh-btn" class="btn btn-sm btn-outline-primary" onclick="window.location.reload();">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <span class="badge 
+                        {% if test_data.status == 'running' %}bg-primary status-running{% endif %}
+                        {% if test_data.status == 'completed' %}bg-success status-completed{% endif %}
+                        {% if test_data.status == 'failed' %}bg-danger status-failed{% endif %}
+                        {% if test_data.status == 'error' %}bg-danger status-error{% endif %}">
+                        {{ test_data.status | upper }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <p><strong>Command:</strong> <code>{{ test_data.command }}</code></p>
+                    <p><strong>Started:</strong> {{ test_data.start_time }}</p>
+                    {% if test_data.end_time %}
+                    <p><strong>Ended:</strong> {{ test_data.end_time }}</p>
+                    {% endif %}
+                    
+                    {% if test_data.status == 'running' %}
+                    <p><strong>Running Duration:</strong> <span id="current-duration">calculating...</span></p>
+                    {% endif %}
+                    
+                    {% if test_data.duration is not none %}
+                    <p><strong>Duration:</strong> 
+                        {% if test_data.duration >= 60 %}
+                            {{ (test_data.duration / 60)|int }} min {{ (test_data.duration % 60)|int }} sec
+                        {% else %}
+                            {{ test_data.duration|int }} seconds
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    
+                    {% if test_data.status == 'running' %}
+                    <div class="alert alert-info d-flex align-items-center">
+                        <div class="running-animation me-3">
+                            <div></div><div></div><div></div><div></div>
+                        </div>
+                        <div>Test is running... This page will automatically update.</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if test_data.results_file %}
+                    <div class="alert alert-success">
+                        Test complete! <a href="{{ url_for('view_results', results_file=test_data.results_file) }}" class="alert-link">View Results</a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <h5 class="d-flex justify-content-between align-items-center">
+                    <span>Console Output</span>
+                    <small class="text-muted" id="last-updated">Last updated: {{ test_data.last_update|default(now().strftime('%H:%M:%S')) }}</small>
+                </h5>
+                <pre class="console-output" id="console-output">{% for line in test_data.output %}{{ line }}
+{% endfor %}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .running-animation {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+    .running-animation div {
+        position: absolute;
+        top: 8px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #0d6efd;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    .running-animation div:nth-child(1) {
+        left: 8px;
+        animation: running-animation1 0.6s infinite;
+    }
+    .running-animation div:nth-child(2) {
+        left: 8px;
+        animation: running-animation2 0.6s infinite;
+    }
+    .running-animation div:nth-child(3) {
+        left: 32px;
+        animation: running-animation2 0.6s infinite;
+    }
+    .running-animation div:nth-child(4) {
+        left: 56px;
+        animation: running-animation3 0.6s infinite;
+    }
+    @keyframes running-animation1 {
+        0% {transform: scale(0);}
+        100% {transform: scale(1);}
+    }
+    @keyframes running-animation2 {
+        0% {transform: translate(0, 0);}
+        100% {transform: translate(24px, 0);}
+    }
+    @keyframes running-animation3 {
+        0% {transform: scale(1);}
+        100% {transform: scale(0);}
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+{% if test_data.status == 'running' %}
+<script>
+    // Poll for updates every 2 seconds if the test is still running
+    function updateOutput() {
+        fetch('{{ url_for("test_output", run_id=run_id) }}')
+            .then(response => response.json())
+            .then(data => {
+                // Update output
+                const outputElem = document.getElementById('console-output');
+                outputElem.innerHTML = data.output.join('\n');
+                outputElem.scrollTop = outputElem.scrollHeight;
+                
+                // Update the last-updated time
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+                document.getElementById('last-updated').textContent = `Last updated: ${timeStr}`;
+                
+                // Calculate and update running duration if we have a start time
+                if (data.start_time) {
+                    // Parse timestamp in format "YYYY-MM-DD HH:MM:SS"
+                    const parts = data.start_time.split(' ');
+                    const datePart = parts[0].split('-');
+                    const timePart = parts[1].split(':');
+                    
+                    const startTime = new Date(
+                        parseInt(datePart[0]), 
+                        parseInt(datePart[1])-1, // Month is 0-indexed
+                        parseInt(datePart[2]),
+                        parseInt(timePart[0]),
+                        parseInt(timePart[1]),
+                        parseInt(timePart[2])
+                    );
+                    
+                    const currentDuration = Math.floor((now - startTime) / 1000);
+                    
+                    // Create or update the duration element
+                    const durationElem = document.getElementById('current-duration');
+                    if (durationElem) {
+                        // Format the duration
+                        let durationText = '';
+                        if (currentDuration >= 60) {
+                            const mins = Math.floor(currentDuration / 60);
+                            const secs = currentDuration % 60;
+                            durationText = `${mins} min ${secs} sec`;
+                        } else {
+                            durationText = `${currentDuration} seconds`;
+                        }
+                        durationElem.textContent = durationText;
+                    }
+                }
+                
+                // Check if test has completed
+                if (data.status !== 'running') {
+                    console.log("Test completed with status: " + data.status);
+                    // Reload page to show final status
+                    window.location.reload();
+                    return;
+                }
+                
+                // Add a watchdog timer - if no updates in 60 seconds, force reload
+                if (window.lastUpdateTime) {
+                    const now = new Date().getTime();
+                    if (now - window.lastUpdateTime > 60000) {
+                        console.log("No updates in 60 seconds, forcing reload");
+                        window.location.reload();
+                        return;
+                    }
+                }
+                window.lastUpdateTime = new Date().getTime();
+                
+                // Schedule next update
+                setTimeout(updateOutput, 2000);
+            })
+            .catch(error => {
+                console.error('Error fetching test output:', error);
+                // Try again in 5 seconds
+                setTimeout(updateOutput, 5000);
+            });
+    }
+    
+    // Start polling
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(updateOutput, 2000);
+    });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule Test{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Schedule Test</span>
+                <div>
+                    <a href="{{ url_for('view_scheduled_tests') }}" class="btn btn-sm btn-outline-primary">View Scheduled Tests</a>
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Back to Home</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('schedule_test') }}" method="post">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="platform_type" class="form-label">Platform Type</label>
+                                <select class="form-select" id="platform_type" name="platform_type">
+                                    {% for config in configs %}
+                                    <option value="{{ config.type }}">{{ config.name }} ({{ config.type }})</option>
+                                    {% endfor %}
+                                    <option value="custom">Custom Website Testing</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="url" class="form-label">Website URL (optional - overrides config)</label>
+                                <input type="url" class="form-control" id="url" name="url" placeholder="https://example.com">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="test_file" class="form-label">Test Cases File</label>
+                                <select class="form-select" id="test_file" name="test_file">
+                                    {% for file in test_files %}
+                                    <option value="{{ file.path }}">{{ file.name }} ({{ file.case_count }} tests)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="headless" name="headless" checked>
+                                    <label class="form-check-label" for="headless">
+                                        Run in Headless Mode
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="schedule_type" class="form-label">Schedule Type</label>
+                                <select class="form-select" id="schedule_type" name="schedule_type">
+                                    <option value="once">Run Once</option>
+                                    <option value="daily" disabled>Daily (Coming Soon)</option>
+                                    <option value="weekly" disabled>Weekly (Coming Soon)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="schedule_date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="schedule_date" name="schedule_date" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="schedule_time" class="form-label">Time</label>
+                                <input type="time" class="form-control" id="schedule_time" name="schedule_time" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-info-circle"></i> About Test Scheduling</h5>
+                        <p>Schedule tests to run automatically at a specific date and time. The server must be running at the scheduled time for tests to execute.</p>
+                        <p><strong>Note:</strong> Tests will run in headless mode (without visible browser) by default when scheduled.</p>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Schedule Test</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set default date/time to today + 1 hour
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        
+        // Add 1 hour to current time
+        now.setHours(now.getHours() + 1);
+        
+        // Set date
+        const dateStr = now.toISOString().split('T')[0];
+        document.getElementById('schedule_date').value = dateStr;
+        
+        // Set time
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('schedule_time').value = `${hours}:${minutes}`;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Screenshots{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Screenshots</span>
+                <div>
+                    <form method="post" action="{{ url_for('delete_all_screenshots') }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete ALL screenshots? This cannot be undone.');">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete All Screenshots</button>
+                    </form>
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Back to Home</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if screenshots %}
+                <div class="row">
+                    {% for screenshot in screenshots %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card">
+                            <img src="{{ url_for('serve_screenshot', filename=screenshot.filename) }}" class="card-img-top" alt="{{ screenshot.filename }}">
+                            <div class="card-body">
+                                <h5 class="card-title text-truncate">{{ screenshot.filename }}</h5>
+                                <p class="card-text"><small class="text-muted">{{ screenshot.date }}</small></p>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('serve_screenshot', filename=screenshot.filename) }}" class="btn btn-sm btn-primary" target="_blank">View Full Size</a>
+                                    <a href="{{ url_for('delete_screenshot', filename=screenshot.filename) }}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this screenshot?');">Delete</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">No screenshots found.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

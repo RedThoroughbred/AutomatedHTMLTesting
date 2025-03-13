@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Scheduled Tests{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Scheduled Tests</span>
+                <div>
+                    <a href="{{ url_for('schedule_test') }}" class="btn btn-sm btn-outline-primary">Schedule New Test</a>
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Back to Home</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if scheduled_tests %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Platform</th>
+                                <th>Test File</th>
+                                <th>Scheduled For</th>
+                                <th>Status</th>
+                                <th>Results</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for test in scheduled_tests %}
+                            <tr>
+                                <td>{{ test.id }}</td>
+                                <td>{{ test.platform_type }}</td>
+                                <td>{{ test.test_file }}</td>
+                                <td>{{ test.schedule_datetime.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <span class="badge
+                                    {% if test.status == 'scheduled' %}bg-primary{% endif %}
+                                    {% if test.status == 'running' %}bg-info{% endif %}
+                                    {% if test.status == 'completed' %}bg-success{% endif %}
+                                    {% if test.status == 'failed' %}bg-danger{% endif %}
+                                    {% if test.status == 'error' %}bg-danger{% endif %}
+                                    ">
+                                        {{ test.status | upper }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if test.status == 'completed' and test.results_file %}
+                                    <a href="{{ url_for('view_results', results_file=test.results_file) }}" class="btn btn-sm btn-success">
+                                        <i class="bi bi-bar-chart"></i> View Results
+                                    </a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if test.status == 'scheduled' %}
+                                    <a href="{{ url_for('cancel_scheduled_test', test_id=test.id) }}" class="btn btn-sm btn-danger"
+                                      onclick="return confirm('Are you sure you want to cancel this scheduled test?')">
+                                        Cancel
+                                    </a>
+                                    {% elif test.status == 'running' and test.run_id %}
+                                    <a href="{{ url_for('test_status', run_id=test.run_id) }}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-display"></i> View Progress
+                                    </a>
+                                    {% elif test.status == 'completed' and test.run_id %}
+                                    <a href="{{ url_for('test_status', run_id=test.run_id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-file-text"></i> View Log
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No scheduled tests. <a href="{{ url_for('schedule_test') }}">Schedule a test</a> to get started.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

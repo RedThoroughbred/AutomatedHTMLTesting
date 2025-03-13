@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Create Test Cases from Table{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Create Test Cases from Jira/Confluence Table</span>
+                <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Back to Home</a>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Copy and paste table data from Jira or Confluence. The tool will try to convert it into test cases.
+                </p>
+                
+                <form action="{{ url_for('create_test_from_table') }}" method="post">
+                    <div class="mb-3">
+                        <label for="test_name" class="form-label">Test File Name (without .csv extension)</label>
+                        <input type="text" class="form-control" id="test_name" name="test_name" 
+                               value="jira_import_{{ now }}" required>
+                        <div class="form-text">Give your test file a descriptive name</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="table_data" class="form-label">Table Data (Tab or Pipe separated)</label>
+                        <textarea class="form-control" id="table_data" name="table_data" rows="12" 
+                                  placeholder="Paste table data here..." required></textarea>
+                        <div class="form-text">
+                            Format: Each row should have at least 2 columns - the first for Year/Model and the second for Part name.
+                            <br>Example: <code>2023 Honda Civic | Door Handle</code> or <code>Toyota Camry [tab] Radiator</code>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-label">Test Type</div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="test_type" id="test_standard" 
+                                   value="standard" checked>
+                            <label class="form-check-label" for="test_standard">
+                                Standard (Verify parts exist)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="test_type" id="test_added" 
+                                   value="added" onchange="document.getElementById('check_added').checked = this.checked">
+                            <label class="form-check-label" for="test_added">
+                                Added Parts (Verify newly added parts)
+                            </label>
+                            <input type="checkbox" name="check_added" id="check_added" style="display:none">
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="test_type" id="test_removed" 
+                                   value="removed" onchange="document.getElementById('check_removed').checked = this.checked">
+                            <label class="form-check-label" for="test_removed">
+                                Removed Parts (Verify parts are no longer present)
+                            </label>
+                            <input type="checkbox" name="check_removed" id="check_removed" style="display:none">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h5>How to use:</h5>
+                        <ol>
+                            <li>In Jira or Confluence, select the table rows containing the data</li>
+                            <li>Copy the selected rows (Ctrl+C or Cmd+C)</li>
+                            <li>Paste into the text area above (Ctrl+V or Cmd+V)</li>
+                            <li>Select the test type based on your needs:
+                                <ul>
+                                    <li><strong>Standard</strong>: Normal search test</li>
+                                    <li><strong>Added Parts</strong>: Tests for parts that should now appear</li>
+                                    <li><strong>Removed Parts</strong>: Tests for parts that should no longer be found</li>
+                                </ul>
+                            </li>
+                            <li>Click "Create Test Cases" to generate the test file</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Create Test Cases</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-populate the test name field with current date/time
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        
+        const dateStr = `${year}${month}${day}_${hours}${minutes}`;
+        document.getElementById('test_name').value = `jira_import_${dateStr}`;
+    });
+</script>
+{% endblock %}

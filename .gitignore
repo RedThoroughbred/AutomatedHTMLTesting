@@ -1,0 +1,23 @@
+# Ignore screenshots directory
+/screenshots/
+
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore test results
+/results_*.csv
+/dropdown_issues_*.txt
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Local development settings
+.env
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints

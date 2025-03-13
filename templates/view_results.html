@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Test Results - {{ results_file }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Test Results: {{ results_file }}</span>
+                <div>
+                    <a href="{{ url_for('download_results', results_file=results_file) }}" class="btn btn-sm btn-outline-secondary">Download</a>
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Back to Home</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Total Tests</h5>
+                                <p class="card-text fs-1">{{ total }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <div class="card bg-success bg-opacity-10">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-success">Passed</h5>
+                                <p class="card-text fs-1">{{ passed }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <div class="card bg-danger bg-opacity-10">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-danger">Failed</h5>
+                                <p class="card-text fs-1">{{ failed }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-lg-2">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Pass Rate</h5>
+                                <p class="card-text fs-1">{{ pass_percent }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% if duration is not none %}
+                    <div class="col-md-3 col-lg-2">
+                        <div class="card bg-info bg-opacity-10">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-info">Duration</h5>
+                                <p class="card-text fs-2">
+                                    {% if duration >= 60 %}
+                                        {{ (duration / 60)|int }}m {{ (duration % 60)|int }}s
+                                    {% else %}
+                                        {{ duration|int }}s
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Search</th>
+                                <th scope="col">Expected</th>
+                                <th scope="col">Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr class="{% if result.Result.startswith('P') %}test-result-P{% elif result.Result.startswith('F') %}test-result-F{% endif %}">
+                                <td>{{ loop.index }}</td>
+                                <td>{{ result.Search }}</td>
+                                <td>{{ result.Expected }}</td>
+                                <td>{{ result.Result }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>Related Screenshots</h5>
+                    <p>View the <a href="{{ url_for('view_screenshots') }}">screenshots gallery</a> to see captured test images.</p>
+                </div>
+                
+                <div class="mt-3 text-muted">
+                    <small>
+                        <strong>Understanding Results:</strong><br>
+                        - Results starting with "P" indicate a PASS<br>
+                        - Results starting with "P*" indicate a PASS with warnings<br>
+                        - Results starting with "F" indicate a FAIL<br>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{
+    "webdriver_options": [
+      "--window-size=1200,800"
+    ],
+    "platforms": [
+      {
+        "name": "cp31prod_mobileWEB",
+        "type": "mobile_web",
+        "url": "https://cp31prod.car-part.com/mobile/index.htm",
+        "login": {
+          "required": false
+        },
+        "selectors": {
+          "year": "#year",
+          "model": "#model",
+          "part": "body > div:nth-child(1) > table:nth-child(2) > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(2) > td > center > table > tbody > tr:nth-child(3) > td:nth-child(2) > select",
+          "search_button": "body > div:nth-child(1) > table:nth-child(2) > tbody > tr:nth-child(2) > td:nth-child(2) > table > tbody > tr:nth-child(2) > td > center > table > tbody > tr:nth-child(7) > td > input[type=image]:nth-child(5)"
+        }
+      }
+    ]
+  }

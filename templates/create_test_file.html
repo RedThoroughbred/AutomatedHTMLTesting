@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Test File{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Create New Test File</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>New Test File</h5>
+        </div>
+        <div class="card-body">
+            <p>Create a new test file to define test cases for automated testing. Test files contain the search criteria and expected results for each test case.</p>
+            
+            <form method="POST" action="{{ url_for('create_test_file') }}">
+                <div class="mb-3">
+                    <label for="test_name" class="form-label">Test File Name</label>
+                    <input type="text" class="form-control" id="test_name" name="test_name" required placeholder="e.g., honda_parts_tests">
+                    <div class="form-text">The filename will be saved as [name].csv if .csv is not included</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Test File Template</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="test_type" id="empty" value="empty" checked>
+                        <label class="form-check-label" for="empty">
+                            Empty Template (header row only)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="test_type" id="sample" value="sample">
+                        <label class="form-check-label" for="sample">
+                            Sample Template (includes example test cases)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="test_type" id="upload" value="upload">
+                        <label class="form-check-label" for="upload">
+                            Save to Uploads Directory
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Create Test File</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Test File Format</h5>
+        </div>
+        <div class="card-body">
+            <p>Test files use a CSV (comma-separated values) format with two required columns:</p>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Column</th>
+                            <th>Purpose</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Search Year|Make Model|Group|Part</code></td>
+                            <td>The search criteria with pipe-separated values for Year, Make/Model, Part Group, and Part Name</td>
+                            <td><code>2023|Honda Civic|Engine|Oil Filter</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>Expected</code></td>
+                            <td>The expected outcome or verification method</td>
+                            <td><code>Verify no errors in search</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h5 class="mt-4">Common Expected Values</h5>
+            <ul>
+                <li><code>Verify no errors in search</code> - Check that the search executes without errors</li>
+                <li><code>Verify appears in search</code> - Check that the part appears in search results</li>
+                <li><code>ABSENT</code> - Check that the part is NOT present in search results</li>
+            </ul>
+            
+            <div class="alert alert-info">
+                <strong>Tip:</strong> After creating a test file, you'll be able to edit it to add more test cases.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

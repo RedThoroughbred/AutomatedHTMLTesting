@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - {{ config_file }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Edit Configuration: {{ config_file }}</span>
+                <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Back to Home</a>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('save_config') }}" method="post">
+                    <input type="hidden" name="config_file" value="{{ config_file }}">
+                    
+                    <div class="mb-3">
+                        <label for="config_content" class="form-label">Configuration JSON:</label>
+                        <textarea class="form-control" id="config_content" name="config_content" rows="20">{{ config_content }}</textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h5>Configuration File Structure</h5>
+                        <p>The configuration file should contain:</p>
+                        <ul>
+                            <li><strong>webdriver_options</strong>: Browser startup options</li>
+                            <li><strong>platforms</strong>: List of platform configurations with:
+                                <ul>
+                                    <li><strong>name</strong>: Platform name (shown in dropdown)</li>
+                                    <li><strong>type</strong>: Platform type (web, pro, app, custom, etc.)</li>
+                                    <li><strong>url</strong>: Default website URL (can be overridden at runtime)</li>
+                                    <li><strong>login</strong>: Settings for authentication:
+                                        <ul>
+                                            <li><strong>required</strong>: Whether login is needed (true/false)</li>
+                                            <li><strong>username/password</strong>: Default credentials (optional)</li>
+                                            <li><strong>selectors</strong>: CSS selectors for login elements</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>selectors</strong>: CSS selectors for important interface elements:
+                                        <ul>
+                                            <li><strong>year</strong>: Selector for year dropdown/field</li>
+                                            <li><strong>model</strong>: Selector for model field</li>
+                                            <li><strong>part</strong>: Selector for part selection</li>
+                                            <li><strong>search_button</strong>: Selector for the search button</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                        
+                        <h5 class="mt-3">How Config Files Work</h5>
+                        <p>The app uses the config files in the following way:</p>
+                        <ol>
+                            <li>The filename format <code>config4[type].json</code> determines what appears in the Platform Type dropdown</li>
+                            <li>When you select a platform type, the app loads the corresponding config file</li>
+                            <li>The app uses the selectors defined in the config to interact with the website</li>
+                            <li>Selectors tell the app how to find elements like dropdowns, buttons, and input fields</li>
+                            <li>If you're testing a new website, you'll need to identify the correct CSS selectors and add them to the config</li>
+                        </ol>
+                        
+                        <p>You can use browser developer tools (right-click → Inspect) to find the correct selectors for elements.</p>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
