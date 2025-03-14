@@ -1188,4 +1188,4 @@ if __name__ == '__main__':
         threading.Thread(target=scheduler_thread, daemon=True).start()
     
     # Run the app
-    app.run(debug=True)  # Reloader enabled for development
+    app.run(debug=True, host='0.0.0.0', port=5000)  # Reloader enabled for development
