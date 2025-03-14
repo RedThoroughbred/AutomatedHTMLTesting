@@ -80,6 +80,45 @@ def save_debug_info(prefix, always_save=False, error_occurred=False):
     else:
         return None
 
+def scroll_to_element(element, description):
+    """Scroll to ensure element is in view before clicking"""
+    try:
+        driver.execute_script("arguments[0].scrollIntoView(true);", element)
+        print(f"Scrolled to {description}")
+        # Small delay to allow the page to settle after scrolling
+        time.sleep(WAIT_TIME/4)
+        return True
+    except Exception as e:
+        print(f"Couldn't scroll to {description}: {str(e)}")
+        return False
+
+def try_click(element, description):
+    """Try multiple methods to click an element with scroll first"""
+    # First scroll to the element
+    scroll_to_element(element, description)
+    
+    try:
+        # Method 1: Standard click
+        element.click()
+        print(f"Clicked {description} using standard click")
+        return True
+    except:
+        try:
+            # Method 2: JavaScript click
+            driver.execute_script("arguments[0].click();", element)
+            print(f"Clicked {description} using JavaScript")
+            return True
+        except:
+            try:
+                # Method 3: ActionChains
+                actions = ActionChains(driver)
+                actions.move_to_element(element).click().perform()
+                print(f"Clicked {description} using ActionChains")
+                return True
+            except Exception as e:
+                print(f"Could not click {description}: {str(e)}")
+                return False
+
 def check_dropdown_issues(select_element):
     """Check for duplicates and ordering issues in a dropdown menu"""
     dropdown_issues = []
@@ -105,30 +144,6 @@ def check_dropdown_issues(select_element):
                     break
     
     return dropdown_issues
-
-def try_click(element, description):
-    """Try multiple methods to click an element"""
-    try:
-        # Method 1: Standard click
-        element.click()
-        print(f"Clicked {description} using standard click")
-        return True
-    except:
-        try:
-            # Method 2: JavaScript click
-            driver.execute_script("arguments[0].click();", element)
-            print(f"Clicked {description} using JavaScript")
-            return True
-        except:
-            try:
-                # Method 3: ActionChains
-                actions = ActionChains(driver)
-                actions.move_to_element(element).click().perform()
-                print(f"Clicked {description} using ActionChains")
-                return True
-            except Exception as e:
-                print(f"Could not click {description}: {str(e)}")
-                return False
 
 def analyze_results_page():
     """Analyze the current page for parts"""
@@ -476,6 +491,65 @@ def handle_login(platform):
     else:
         return True  # No login needed
 
+def setup_search_dropdowns():
+    """Ensure all search dropdowns are active by clicking dropdown links"""
+    try:
+        # First check if we need to click the VIN dropdown link
+        try:
+            vin_dropdown_link = WebDriverWait(driver, WAIT_TIME).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "#vin_dropdown_link"))
+            )
+            if vin_dropdown_link.is_displayed():
+                print("Found VIN dropdown link, clicking to enable dropdown search...")
+                try_click(vin_dropdown_link, "VIN dropdown link")
+                time.sleep(WAIT_TIME)
+                save_debug_info("after_vin_dropdown_click", always_save=True)
+        except Exception as e:
+            print(f"VIN dropdown link not found or not clickable: {str(e)}")
+            
+        # Then check if we need to click the part dropdown link
+        try:
+            part_dropdown_link = WebDriverWait(driver, WAIT_TIME).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "#part_dropdown_link"))
+            )
+            if part_dropdown_link.is_displayed():
+                print("Found part dropdown link, clicking to enable part selection...")
+                try_click(part_dropdown_link, "part dropdown link")
+                time.sleep(WAIT_TIME)
+                save_debug_info("after_part_dropdown_click", always_save=True)
+        except Exception as e:
+            print(f"Part dropdown link not found or not clickable: {str(e)}")
+            
+        # Check if X button needs to be clicked to clear part selection
+        try:
+            x_button = driver.find_element(By.XPATH, "//img[@src='img/x.gif' and contains(@style, 'border:0')]")
+            if x_button.is_displayed():
+                print("Found X button, clicking to clear part selection...")
+                try_click(x_button, "X button")
+                time.sleep(WAIT_TIME)
+                save_debug_info("after_x_button_click", always_save=True)
+                
+                # After clicking X, we may need to click part dropdown link again
+                try:
+                    part_dropdown_link = WebDriverWait(driver, WAIT_TIME).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, "#part_dropdown_link"))
+                    )
+                    if part_dropdown_link.is_displayed():
+                        print("Found part dropdown link again, clicking to re-enable part selection...")
+                        try_click(part_dropdown_link, "part dropdown link")
+                        time.sleep(WAIT_TIME)
+                        save_debug_info("after_part_dropdown_click_2", always_save=True)
+                except Exception as e:
+                    print(f"Part dropdown link not found after X button click: {str(e)}")
+                    
+        except Exception as e:
+            print(f"X button not found: {str(e)}")
+            
+        return True
+    except Exception as e:
+        print(f"Error setting up search dropdowns: {str(e)}")
+        return False
+
 try:
     # Load all test cases
     test_cases = pd.read_csv(args.test_set)
@@ -492,29 +566,26 @@ try:
             # Get the platform config (using only the first platform for now)
             platform = platforms_to_test[0]
             
-            # Navigate to the configured URL
-            driver.get(platform["url"])
-            print(f"Opened website: {platform['url']}")
-            
-            # Handle login if required
-            if not handle_login(platform):
-                raise Exception(f"Failed to log in to {platform['name']}")
-            
-            # Wait for the page to load
-            time.sleep(WAIT_TIME)
-            
-            # Check if we need to click on the dropdown link first (Car-Part Pro site specific)
-            try:
-                dropdown_link = driver.find_element(By.CSS_SELECTOR, "#vin_dropdown_link")
-                if dropdown_link.is_displayed():
-                    print("Found dropdown link, clicking to enable dropdown search...")
-                    try_click(dropdown_link, "dropdown link")
-                    time.sleep(WAIT_TIME)  # Wait for dropdowns to appear
-                    
-                    # Save a screenshot after clicking the dropdown link
-                    save_debug_info("after_dropdown_link", always_save=True)
-            except Exception as e:
-                print(f"No dropdown link found, continuing with standard search: {str(e)}")
+            # For the first test, always navigate directly to the URL and handle login
+            if index == 0:
+                driver.get(platform["url"])
+                print(f"Opened website: {platform['url']}")
+                
+                # Handle login if required
+                if not handle_login(platform):
+                    raise Exception(f"Failed to log in to {platform['name']}")
+                
+                # Wait for the page to load
+                time.sleep(WAIT_TIME)
+            # For subsequent tests, just make sure search dropdowns are set up properly
+            else:
+                # Navigate back to the main URL to ensure we're in a clean state
+                driver.get(platform["url"])
+                print(f"Opened website: {platform['url']}")
+                time.sleep(WAIT_TIME * 2)
+                
+                # Set up all search dropdowns
+                setup_search_dropdowns()
             
             # Parse test data
             parts = test_data['Search Year|Make Model|Group|Part'].split('|')
@@ -1037,63 +1108,6 @@ try:
                 'Result': result
             })
             
-            # At the end of each test, reset by clicking the X first, then proceed with the same initial steps
-            try:
-                # 1. First click the X button to clear the part selection using the exact properties
-                try:
-                    # Take a screenshot to see what we're working with
-                    save_debug_info("before_clear_attempt", always_save=True)
-                    
-                    # Try to find the X button using its exact properties
-                    x_button = driver.find_element(By.XPATH, "//img[@src='img/x.gif' and contains(@style, 'border:0') and contains(@style, 'position:relative')]")
-                    
-                    print("Found X button by exact properties")
-                    driver.execute_script("arguments[0].scrollIntoView(true);", x_button)
-                    time.sleep(WAIT_TIME/2)  # Wait for scroll
-                    
-                    # Try different click methods
-                    if not try_click(x_button, "X button"):
-                        # If normal click fails, try JavaScript click
-                        driver.execute_script("arguments[0].click();", x_button)
-                        print("Clicked X button with JavaScript")
-                    
-                    print("Clicked X button to clear selection")
-                    time.sleep(WAIT_TIME)  # Wait for the part to clear
-                    
-                    # Save a screenshot to see the state after clearing
-                    save_debug_info("after_clearing_part", always_save=True)
-                except Exception as e:
-                    print(f"Error clicking X button by exact properties: {str(e)}")
-                    
-                    # Try to find ANY img with src containing x.gif
-                    try:
-                        x_images = driver.find_elements(By.XPATH, "//img[contains(@src, 'x.gif')]")
-                        if x_images:
-                            print(f"Found {len(x_images)} possible X buttons")
-                            for img in x_images:
-                                if img.is_displayed():
-                                    driver.execute_script("arguments[0].scrollIntoView(true);", img)
-                                    time.sleep(WAIT_TIME/2)
-                                    driver.execute_script("arguments[0].click();", img)
-                                    print("Clicked alternative X button")
-                                    time.sleep(WAIT_TIME)
-                                    break
-                        else:
-                            print("No X images found")
-                    except Exception as e2:
-                        print(f"Error with alternative X approach: {str(e2)}")
-                        
-                        # Last resort - navigate back to start fresh
-                        driver.get(platform["url"])
-                        print("Navigated back to main page as couldn't clear existing selections")
-                        time.sleep(WAIT_TIME * 2)
-                
-                # Now the part is cleared, continue with the same steps as at the beginning
-            except Exception as e:
-                print(f"Error resetting for next test: {str(e)}")
-                driver.get(platform["url"])
-                time.sleep(WAIT_TIME * 2)
-                
         except Exception as e:
             # Enhanced error handling
             result = handle_test_error(e, test_data, index)
@@ -1101,21 +1115,7 @@ try:
             
             # Even after error, try to reset to search screen for next test
             try:
-                # Navigate back to main search page
-                driver.get(platform["url"])
-                time.sleep(WAIT_TIME * 2)
-            except:
-                print("Could not reset to search page after error")
-                
-            continue  # Continue to next test case
-        except Exception as e:
-            # Enhanced error handling
-            result = handle_test_error(e, test_data, index)
-            results.append(result)
-            
-            # Even after error, try to reset to search screen for next test
-            try:
-                # Navigate back to main search page
+                # Navigate back to main search page for next test
                 driver.get(platform["url"])
                 time.sleep(WAIT_TIME * 2)
             except:
@@ -1123,21 +1123,6 @@ try:
                 
             continue  # Continue to next test case
             
-        except Exception as e:
-            # Enhanced error handling
-            result = handle_test_error(e, test_data, index)
-            results.append(result)
-            
-            # Even after error, try to reset to search screen for next test
-            try:
-                # Try to navigate back to main search page
-                driver.get(platform["url"])
-                time.sleep(WAIT_TIME)
-            except:
-                print("Could not reset to search page after error")
-                
-            continue  # Continue to next test case
-    
     # Save final results to CSV
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_df = pd.DataFrame(results)
